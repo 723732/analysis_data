@@ -27,6 +27,37 @@ def getcommit_id(input_dir, output_path):
 
     return output_file
 
+
+def analysis_changefile(changefile_path):
+    i = 0
+    path = re.sub('changefile.txt', '', changefile_path)
+    with open(changefile_path, 'r', encoding='UTF-8') as file_object:
+        lines = file_object.readlines()
+
+    for line in lines:
+        # print(line)
+        if line.startswith('diff --'):
+            file_name = line.split('/')[-1].split('.')[0] + '.txt'
+            file_path = path + file_name
+            with open(file_path, 'w', encoding='UTF-8') as file_object1:
+                file_object1.write(line)
+        else:
+            with open(file_path, 'a', encoding='UTF-8') as file_object1:
+                file_object1.write(line)
+            if line.startswith('rename from'):
+                i = i + 1
+                path_from = line.split(' ')[-1]
+                if i == 1:
+                  with open(path + 'rename.txt', 'w', encoding='UTF-8') as file_object2:
+                    file_object2.write(str(i) + ':' + path_from)
+                else:
+                  with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
+                    file_object2.write(str(i) + ':' + path_from)
+            elif line.startswith('rename to'):
+                path_to = line.split(' ')[-1]
+                with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
+                    file_object2.write(str(i) + ':' + path_to)
+
   
 def getchange_file(input_dir, commit_id):
     lines = []
@@ -51,29 +82,16 @@ def getchange_file(input_dir, commit_id):
           os.makedirs(oldnew_path)
         
         output_file = oldnew_path + '\\changefile.txt'
-        cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'] + ' ' + lines[index]['id'] + ' --name-only > ' + output_file
+        cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'] + ' ' + lines[index]['id'] + ' > ' + output_file
         py_path = os.path.dirname(__file__)
-        p = subprocess.Popen(cmd, shell = True, cwd = py_path)
-        p.wait()
-
-        if os.path.exists(output_file):
-          if os.path.getsize(output_file) > 0:
-            with open(output_file) as file_object1:
-              for line1 in file_object1:
-                #每一行都是发生改变文件的具体路径
-                output_file1 = oldnew_path + '\\' + line1.split('/')[-1].split('.')[0] + '.txt'
-                cmd1 = 'cd ' + input_dir + '&' + 'git diff ' + lines[index]['parent_id'] + ' ' + lines[index]['id'] + ' -- ' + line1.rstrip() + ' > ' + output_file1
-                # print(cmd1)
-                py_path =  os.path.dirname(__file__)
-                p = subprocess.Popen(cmd1, shell = True, cwd = py_path)
-                # p.wait()
+        subprocess.Popen(cmd, shell = True, cwd = py_path)
     
 
 if __name__ == '__main__':
 
   print ("文件夹名：",sys.argv[1])
   input_dir = sys.argv[1]
-  # input_dir = 'E:\python_work\\test\\3_logstash-logback-encoder'
+  # input_dir = 'E:\\test\\2_compile-testing'
 
   output_path = mkdir(input_dir)
 
@@ -81,5 +99,13 @@ if __name__ == '__main__':
   commit_id = getcommit_id(input_dir, output_path)
 
   getchange_file(input_dir, commit_id)
+
+  for root, dirs, files in os.walk(output_path):
+    #print(files, len(files))
+    if files:
+      for file1 in files:
+        if file1.startswith('changefile'):
+          analysis_changefile(root + '\\changefile.txt')
+
   print(u'生成成功')
 
