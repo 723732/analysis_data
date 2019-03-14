@@ -30,7 +30,8 @@ def getcommit_id(input_dir, output_path):
 
 def analysis_changefile(changefile_path):
     i = 0
-    path = re.sub('changefile.txt', '', changefile_path)
+    filename = changefile_path.split('\\')[-1]
+    path = re.sub(filename, '', changefile_path)
     with open(changefile_path, 'r', encoding='UTF-8') as file_object:
         lines = file_object.readlines()
 
@@ -81,9 +82,14 @@ def getchange_file(input_dir, commit_id):
         if not isExists:
           os.makedirs(oldnew_path)
         
-        output_file = oldnew_path + '\\changefile.txt'
-        cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'] + ' ' + lines[index]['id'] + ' > ' + output_file
         py_path = os.path.dirname(__file__)
+        if ' ' in lines[index]['parent_id']:
+          output_file2 = oldnew_path + '\\changefile2.txt'
+          cmd2 = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'].split(' ')[-1] + ' ' + lines[index]['id'] + ' > ' + output_file2        
+          subprocess.Popen(cmd2, shell = True, cwd = py_path)
+        
+        output_file1 = oldnew_path + '\\changefile1.txt'
+        cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'].split(' ')[0] + ' ' + lines[index]['id'] + ' > ' + output_file1        
         subprocess.Popen(cmd, shell = True, cwd = py_path)
     
 
@@ -104,8 +110,8 @@ if __name__ == '__main__':
     #print(files, len(files))
     if files:
       for file1 in files:
-        if file1.startswith('changefile'):
-          analysis_changefile(root + '\\changefile.txt')
+        if file1.startswith('changefile') and os.path.getsize(root + '\\' + file1) > 0:
+          analysis_changefile(root + '\\' + file1)
 
   print(u'生成成功')
 
