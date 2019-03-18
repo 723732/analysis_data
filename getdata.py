@@ -84,13 +84,11 @@ def getchange_file(input_dir, commit_id):
         
         py_path = os.path.dirname(__file__)
         if ' ' in lines[index]['parent_id']:
-          output_file2 = oldnew_path + '\\changefile2.txt'
-          cmd2 = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'].split(' ')[-1] + ' ' + lines[index]['id'] + ' > ' + output_file2        
-          subprocess.Popen(cmd2, shell = True, cwd = py_path)
-        
-        output_file1 = oldnew_path + '\\changefile1.txt'
-        cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'].split(' ')[0] + ' ' + lines[index]['id'] + ' > ' + output_file1        
-        subprocess.Popen(cmd, shell = True, cwd = py_path)
+          continue
+        else:
+          output_file = oldnew_path + '\\changefile.txt'
+          cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'] + ' ' + lines[index]['id'] + ' > ' + output_file       
+          subprocess.Popen(cmd, shell = True, cwd = py_path)
     
 
 if __name__ == '__main__':
