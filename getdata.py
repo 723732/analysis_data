@@ -1,20 +1,13 @@
 import sys, os, subprocess, re
+import threading
 
-def mkdir(input_dir):
-    str = input_dir
-    project_name = str.split('\\')[-1]
-    output_path = 'E:\output\\' + project_name
-
-    isExists = os.path.exists(output_path)
-
+def mkdir(dir_path):
+    isExists = os.path.exists(dir_path)
     if not isExists:
-      os.makedirs(output_path)
+      os.makedirs(dir_path)
 
 
-    return output_path
-
-
-def getcommit_id(input_dir, output_path):
+def getcommitId_file(input_dir, output_path):
     # str = input_dir
     # output_path = str.split('\\')[-1]
     output_file = output_path + '\\commit_id.txt'
@@ -59,57 +52,96 @@ def analysis_changefile(changefile_path):
                 with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
                     file_object2.write(str(i) + ':' + path_to)
 
+
+def getcommit_id(commitId_file):
+  lines = []
+  with open(commitId_file) as file_object:
+    #将各行存储在字典列表中
+    for line in file_object:
+      com_id = line.split(':')[1]
+      parent_id = line.split(':')[2]
+      explain = line.lstrip('fotmat:' + com_id + ':' + parent_id + ':')
+      new_line = {'id': com_id, 'parent_id': parent_id, 'explain': explain}
+
+      lines.append(new_line)
   
-def getchange_file(input_dir, commit_id):
-    lines = []
+  return lines
 
-    with open(commit_id) as file_object:
-      #将各行存储在字典列表中
-      for line in file_object:
-        com_id = line.split(':')[1]
-        parent_id = line.split(':')[2]
-        explain = line.lstrip('fotmat:' + com_id + ':' + parent_id + ':')
-        new_line = {'id': com_id, 'parent_id': parent_id, 'explain': explain}
+  
+def getchange_file(start_num, end_num, id_list, output_path):
+  for index in range(start_num, end_num):
+    #print(index,lines[index+1]['id'])
+    parent = re.sub(' ', '-', id_list[index]['parent_id'])
+    oldnew_path = output_path + '\\' + str(index+1) + '_' + parent + '_' + id_list[index]['id']
 
-        lines.append(new_line)
+    mkdir(oldnew_path)
+    
+    py_path = os.path.dirname(__file__)
+    if ' ' in id_list[index]['parent_id']:
+      path1 = oldnew_path + '\\' + id_list[index]['parent_id'].split(' ')[0] + '_' + id_list[index]['id']
+      path2 = oldnew_path + '\\' + id_list[index]['parent_id'].split(' ')[-1] + '_' + id_list[index]['id']
+      mkdir(path1)
+      mkdir(path2)
+      output_file1 = path1 + '\\changefile.txt'
+      output_file2 = path2 + '\\changefile.txt'
+      cmd1 = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'].split(' ')[0] + ' ' + id_list[index]['id'] + ' > ' + output_file1
+      subprocess.Popen(cmd1, shell = True, cwd = py_path)
 
-      for index in range(len(lines)-1):
-        #print(index,lines[index+1]['id'])
-        parent = re.sub(' ', '-', lines[index]['parent_id'])
-        oldnew_path = commit_id.rstrip('\commit_id.txt') + '\\' + str(index+1) + '_' + parent + '_' + lines[index]['id']
-        isExists = os.path.exists(oldnew_path)
-
-        if not isExists:
-          os.makedirs(oldnew_path)
-        
-        py_path = os.path.dirname(__file__)
-        if ' ' in lines[index]['parent_id']:
-          continue
-        else:
-          output_file = oldnew_path + '\\changefile.txt'
-          cmd = 'cd ' + input_dir + '&' +'git diff ' + lines[index]['parent_id'] + ' ' + lines[index]['id'] + ' > ' + output_file       
-          subprocess.Popen(cmd, shell = True, cwd = py_path)
+      cmd2 = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'].split(' ')[-1] + ' ' + id_list[index]['id'] + ' > ' + output_file2
+      subprocess.Popen(cmd2, shell = True, cwd = py_path)
+    else:
+      output_file = oldnew_path + '\\changefile.txt'
+      cmd = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'] + ' ' + id_list[index]['id'] + ' > ' + output_file       
+      subprocess.Popen(cmd, shell = True, cwd = py_path)
     
 
 if __name__ == '__main__':
 
-  print ("文件夹名：",sys.argv[1])
-  input_dir = sys.argv[1]
-  # input_dir = 'E:\\test\\2_compile-testing'
+  # print ("文件夹名：",sys.argv[1])
+  # input_dir = sys.argv[1]
+  input_dir = 'E:\\test\\2_compile-testing'
 
-  output_path = mkdir(input_dir)
+  project_name = input_dir.split('\\')[-1]
+  output_path = 'E:\\output\\' + project_name
+
+  mkdir(output_path)
 
   print ("output_path：",output_path)
-  commit_id = getcommit_id(input_dir, output_path)
+  commitId_file = getcommitId_file(input_dir, output_path)
+  commitId_list = getcommit_id(commitId_file)
 
-  getchange_file(input_dir, commit_id)
+  # t1 = threading.Thread(target = getchange_file, args = [0, len(commitId_list)//2, commitId_list, output_path])
+  # t2 = threading.Thread(target = getchange_file, args = [len(commitId_list)//2, len(commitId_list), commitId_list, output_path])
+  # t1.start()
+  # t2.start()
 
+  # t1.join()
+  # t2.join()
+  getchange_file(0, len(commitId_list), commitId_list, output_path)
+
+  changefile_list = []
   for root, dirs, files in os.walk(output_path):
     #print(files, len(files))
     if files:
       for file1 in files:
         if file1.startswith('changefile') and os.path.getsize(root + '\\' + file1) > 0:
-          analysis_changefile(root + '\\' + file1)
+          # analysis_changefile(root + '\\' + file1)
+          new_changefile = root + '\\' + file1
+          changefile_list.append(new_changefile)
+  
+  # print(changefile_list, len(changefile_list))
+
+  for index in range(len(changefile_list)//2):
+    # analysis_changefile(changefile_list[index])
+    # analysis_changefile(changefile_list[index + len(changefile_list)//2])
+    # t1 = threading.Thread(target = analysis_changefile, args = [changefile_list[index]])
+    # t2 = threading.Thread(target = analysis_changefile, args = [changefile_list[index + len(changefile_list)//2]])
+    # t1.start()
+    # t2.start()
+
+    # t1.join()
+    # t2.join()
+    print(index, len(changefile_list)//2, len(changefile_list))
 
   print(u'生成成功')
 
