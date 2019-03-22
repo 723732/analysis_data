@@ -1,5 +1,6 @@
 import sys, os, subprocess, re
 import threading
+from multiprocessing import Pool
 
 def mkdir(dir_path):
     isExists = os.path.exists(dir_path)
@@ -69,6 +70,7 @@ def getcommit_id(commitId_file):
 
   
 def getchange_file(start_num, end_num, id_list, output_path):
+  changefile_list = []
   for index in range(start_num, end_num):
     #print(index,lines[index+1]['id'])
     parent = re.sub(' ', '-', id_list[index]['parent_id'])
@@ -83,17 +85,22 @@ def getchange_file(start_num, end_num, id_list, output_path):
       mkdir(path1)
       mkdir(path2)
       output_file1 = path1 + '\\changefile.txt'
+      changefile_list.append(output_file1)
       output_file2 = path2 + '\\changefile.txt'
+      changefile_list.append(output_file2)
       cmd1 = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'].split(' ')[0] + ' ' + id_list[index]['id'] + ' > ' + output_file1
       subprocess.Popen(cmd1, shell = True, cwd = py_path)
 
       cmd2 = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'].split(' ')[-1] + ' ' + id_list[index]['id'] + ' > ' + output_file2
       subprocess.Popen(cmd2, shell = True, cwd = py_path)
+
     else:
       output_file = oldnew_path + '\\changefile.txt'
-      cmd = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'] + ' ' + id_list[index]['id'] + ' > ' + output_file       
+      changefile_list.append(output_file)
+      cmd = 'cd ' + input_dir + '&' +'git diff ' + id_list[index]['parent_id'] + ' ' + id_list[index]['id'] + ' > ' + output_file            
       subprocess.Popen(cmd, shell = True, cwd = py_path)
-    
+
+  return changefile_list
 
 if __name__ == '__main__':
 
@@ -110,37 +117,20 @@ if __name__ == '__main__':
   commitId_file = getcommitId_file(input_dir, output_path)
   commitId_list = getcommit_id(commitId_file)
 
-  # t1 = threading.Thread(target = getchange_file, args = [0, len(commitId_list)//2, commitId_list, output_path])
-  # t2 = threading.Thread(target = getchange_file, args = [len(commitId_list)//2, len(commitId_list), commitId_list, output_path])
-  # t1.start()
-  # t2.start()
+  changefile_list = getchange_file(0, len(commitId_list), commitId_list, output_path)
+  print(u'生成filechangge')
 
-  # t1.join()
-  # t2.join()
-  getchange_file(0, len(commitId_list), commitId_list, output_path)
-
-  changefile_list = []
-  for root, dirs, files in os.walk(output_path):
-    #print(files, len(files))
-    if files:
-      for file1 in files:
-        if file1.startswith('changefile') and os.path.getsize(root + '\\' + file1) > 0:
-          # analysis_changefile(root + '\\' + file1)
-          new_changefile = root + '\\' + file1
-          changefile_list.append(new_changefile)
-  
-  # print(changefile_list, len(changefile_list))
-
+  print(changefile_list)
   for index in range(len(changefile_list)//2):
     # analysis_changefile(changefile_list[index])
     # analysis_changefile(changefile_list[index + len(changefile_list)//2])
-    # t1 = threading.Thread(target = analysis_changefile, args = [changefile_list[index]])
-    # t2 = threading.Thread(target = analysis_changefile, args = [changefile_list[index + len(changefile_list)//2]])
-    # t1.start()
-    # t2.start()
+    t1 = threading.Thread(target = analysis_changefile, args = [changefile_list[index]])
+    t2 = threading.Thread(target = analysis_changefile, args = [changefile_list[index + len(changefile_list)//2]])
+    t1.start()
+    t2.start()
 
-    # t1.join()
-    # t2.join()
+    t1.join()
+    t2.join()
     print(index, len(changefile_list)//2, len(changefile_list))
 
   print(u'生成成功')
