@@ -1,6 +1,8 @@
 import sys, os, subprocess, re
-import threading
+# import threading
 from multiprocessing import Pool
+import mythread
+import json
 
 def mkdir(dir_path):
     isExists = os.path.exists(dir_path)
@@ -23,7 +25,16 @@ def getcommitId_file(input_dir, output_path):
 
 
 def analysis_changefile(changefile_path):
-    i = 0
+    edge = {}   
+    node = changefile_path.split('\\')[-2]
+    from_node = node.split('_')[-2]
+    to_node = node.split('_')[-1]
+    edge['from_node'] = from_node
+    edge['to_node'] = to_node
+    edge['change'] = []
+    newchange = {'filename': '', 'type': '', 'line_num': ''}
+
+    # i = 0
     filename = changefile_path.split('\\')[-1]
     path = re.sub(filename, '', changefile_path)
     with open(changefile_path, 'r', encoding='UTF-8') as file_object:
@@ -36,22 +47,35 @@ def analysis_changefile(changefile_path):
             file_path = path + file_name
             with open(file_path, 'w', encoding='UTF-8') as file_object1:
                 file_object1.write(line)
+            
+            if newchange['filename'] != '' or newchange['type'] != '' or newchange['line_num'] != '':
+              edge['change'].append(newchange)
+              newchange = {'filename': '', 'type': '', 'line_num': ''}
         else:
             with open(file_path, 'a', encoding='UTF-8') as file_object1:
                 file_object1.write(line)
-            if line.startswith('rename from'):
-                i = i + 1
-                path_from = line.split(' ')[-1]
-                if i == 1:
-                  with open(path + 'rename.txt', 'w', encoding='UTF-8') as file_object2:
-                    file_object2.write(str(i) + ':' + path_from)
-                else:
-                  with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
-                    file_object2.write(str(i) + ':' + path_from)
-            elif line.startswith('rename to'):
-                path_to = line.split(' ')[-1]
-                with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
-                    file_object2.write(str(i) + ':' + path_to)
+            if line.startswith('+++'):
+              newchange['filename'] = line.split(' ')[-1].rstrip('\n')
+            elif line.startswith('new') or line.startswith('rename from') or line.startswith('copy from') or line.startswith('deleted'):
+              newchange['type'] = line.split(' ')[0]
+            elif line.startswith('@@'):
+              newchange['line_num'] = line
+            # if line.startswith('rename from'):
+            #     i = i + 1
+            #     path_from = line.split(' ')[-1]
+            #     if i == 1:
+            #       with open(path + 'rename.txt', 'w', encoding='UTF-8') as file_object2:
+            #         file_object2.write(str(i) + ':' + path_from)
+            #     else:
+            #       with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
+            #         file_object2.write(str(i) + ':' + path_from)
+            # elif line.startswith('rename to'):
+            #     path_to = line.split(' ')[-1]
+            #     with open(path + 'rename.txt', 'a', encoding='UTF-8') as file_object2:
+            #         file_object2.write(str(i) + ':' + path_to)
+    edge['change'].append(newchange)
+
+    return edge
 
 
 def getcommit_id(commitId_file):
@@ -103,6 +127,8 @@ def getchange_file(start_num, end_num, id_list, output_path):
   return changefile_list
 
 if __name__ == '__main__':
+  edge_json = {}
+  edge_json['edge'] = []
 
   # print ("文件夹名：",sys.argv[1])
   # input_dir = sys.argv[1]
@@ -118,20 +144,34 @@ if __name__ == '__main__':
   commitId_list = getcommit_id(commitId_file)
 
   changefile_list = getchange_file(0, len(commitId_list), commitId_list, output_path)
-  print(u'生成filechangge')
+  print(u'生成filechange')
 
-  print(changefile_list)
-  for index in range(len(changefile_list)//2):
-    # analysis_changefile(changefile_list[index])
-    # analysis_changefile(changefile_list[index + len(changefile_list)//2])
-    t1 = threading.Thread(target = analysis_changefile, args = [changefile_list[index]])
-    t2 = threading.Thread(target = analysis_changefile, args = [changefile_list[index + len(changefile_list)//2]])
+  # for index in range(len(changefile_list)//2):
+  #   # analysis_changefile(changefile_list[index])
+  #   # analysis_changefile(changefile_list[index + len(changefile_list)//2])
+  #   # t1 = threading.Thread(target = analysis_changefile, args = [changefile_list[index]])
+  #   # t2 = threading.Thread(target = analysis_changefile, args = [changefile_list[index + len(changefile_list)//2]])
+  #   t1 = mythread.MyThread(analysis_changefile, args = [changefile_list[index]])
+  #   t2 = mythread.MyThread(analysis_changefile, args = [changefile_list[index + len(changefile_list)//2]])
+  #   t1.start()
+  #   t2.start()
+
+  #   t1.join()
+  #   t2.join()
+  #   edge_json['edge'].append(t1.get_result())
+  #   edge_json['edge'].append(t2.get_result())
+
+  th = []
+  for index in range(len(changefile_list)):
+    t1 = mythread.MyThread(analysis_changefile, args = [changefile_list[index]])
+    th.append(t1)
     t1.start()
-    t2.start()
-
+  for t1 in th:
     t1.join()
-    t2.join()
-    print(index, len(changefile_list)//2, len(changefile_list))
+    edge_json['edge'].append(t1.get_result())
+    # print(t1.get_result())
 
-  print(u'生成成功')
+  with open(output_path +"\\edge.json", 'w', encoding='UTF-8') as file_object:
+    json.dump(edge_json, file_object, indent=4)
+  print(u'生成成功',len(changefile_list))
 
