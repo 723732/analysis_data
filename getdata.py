@@ -104,8 +104,8 @@ def getchange_file(start_num, end_num, id_list, output_path):
     
     py_path = os.path.dirname(__file__)
     if ' ' in id_list[index]['parent_id']:
-      path1 = oldnew_path + '\\' + id_list[index]['parent_id'].split(' ')[0] + '_' + id_list[index]['id']
-      path2 = oldnew_path + '\\' + id_list[index]['parent_id'].split(' ')[-1] + '_' + id_list[index]['id']
+      path1 = oldnew_path + '\\' + str(index+1) + '_' + id_list[index]['parent_id'].split(' ')[0] + '_' + id_list[index]['id']
+      path2 = oldnew_path + '\\' + str(index+1) + '_' + id_list[index]['parent_id'].split(' ')[-1] + '_' + id_list[index]['id']
       mkdir(path1)
       mkdir(path2)
       output_file1 = path1 + '\\changefile.txt'
@@ -130,9 +130,9 @@ if __name__ == '__main__':
   edge_json = {}
   edge_json['edge'] = []
 
-  # print ("文件夹名：",sys.argv[1])
-  # input_dir = sys.argv[1]
-  input_dir = 'E:\\test\\2_compile-testing'
+  print ("文件夹名：",sys.argv[1])
+  input_dir = sys.argv[1]
+  # input_dir = 'E:\\test\\2_compile-testing'
 
   project_name = input_dir.split('\\')[-1]
   output_path = 'E:\\output\\' + project_name
