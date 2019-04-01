@@ -32,7 +32,7 @@ def analysis_changefile(changefile_path):
     edge['from_node'] = from_node
     edge['to_node'] = to_node
     edge['change'] = []
-    newchange = {'filename': '', 'type': '', 'line_num': ''}
+    newchange = {'from_filename': '', 'to_filename': '', 'type': '', 'line_num': ''}
 
     # i = 0
     filename = changefile_path.split('\\')[-1]
@@ -48,18 +48,24 @@ def analysis_changefile(changefile_path):
             with open(file_path, 'w', encoding='UTF-8') as file_object1:
                 file_object1.write(line)
             
-            if newchange['filename'] != '' or newchange['type'] != '' or newchange['line_num'] != '':
+            if newchange['from_filename'] != '' or newchange['type'] != '' or newchange['line_num'] != '' or newchange['to_filename'] != '':
               edge['change'].append(newchange)
-              newchange = {'filename': '', 'type': '', 'line_num': ''}
+              newchange = {'from_filename': '', 'to_filename': '', 'type': '', 'line_num': ''}
         else:
             with open(file_path, 'a', encoding='UTF-8') as file_object1:
                 file_object1.write(line)
-            if line.startswith('+++'):
-              newchange['filename'] = line.split(' ')[-1].rstrip('\n')
+            if line.startswith('---'):
+              newchange['from_filename'] = line.split(' ')[-1].rstrip('\n')
+            elif line.startswith('+++'):
+              newchange['to_filename'] = line.split(' ')[-1].rstrip('\n')
             elif line.startswith('new') or line.startswith('rename from') or line.startswith('copy from') or line.startswith('deleted'):
               newchange['type'] = line.split(' ')[0]
+              if line.startswith('rename from'):
+                newchange['from_filename'] = line.split(' ')[-1].rstrip('\n')
             elif line.startswith('@@'):
               newchange['line_num'] = line
+            elif line.startswith('rename to'):
+              newchange['to_filename'] = line.split(' ')[-1].rstrip('\n')
             # if line.startswith('rename from'):
             #     i = i + 1
             #     path_from = line.split(' ')[-1]
