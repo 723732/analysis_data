@@ -1,5 +1,5 @@
 import sys, os, subprocess, re
-# import threading
+import threading
 from multiprocessing import Pool
 import mythread
 import json
@@ -43,7 +43,12 @@ def analysis_changefile(changefile_path):
     for line in lines:
         # print(line)
         if line.startswith('diff --'):
-            file_name = line.split('/')[-1].split('.')[0] + '.txt'
+            # file_name = line.split('/')[-1].split('.')[0] + '.txt'
+            file_name = line.split('/')[-1]
+            if '.' in file_name:
+              file_name = file_name.split('.')[0] + '.txt'
+            else:
+              file_name = file_name.rstrip('\n') + '.txt'
             file_path = path + file_name
             with open(file_path, 'w', encoding='UTF-8') as file_object1:
                 file_object1.write(line)
@@ -168,14 +173,18 @@ if __name__ == '__main__':
   #   edge_json['edge'].append(t2.get_result())
 
   th = []
-  for index in range(len(changefile_list)):
-    t1 = mythread.MyThread(analysis_changefile, args = [changefile_list[index]])
-    th.append(t1)
-    t1.start()
-  for t1 in th:
-    t1.join()
-    edge_json['edge'].append(t1.get_result())
-    # print(t1.get_result())
+  m = len(changefile_list)//2
+  for num in range(0, 2):
+    for index in range(num*m, (num+1)*m):
+      t1 = mythread.MyThread(analysis_changefile, args = [changefile_list[index]])
+      th.append(t1)
+      t1.start()
+
+    for t1 in th:
+      t1.join()
+      print(threading.active_count())
+      edge_json['edge'].append(t1.get_result())
+      # print(t1.get_result())
 
   with open(output_path +"\\edge.json", 'w', encoding='UTF-8') as file_object:
     json.dump(edge_json, file_object, indent=4)
