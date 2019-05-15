@@ -21,7 +21,7 @@ def collectFile(rootDir, copyfile_path):
         path1 = subject_name + '\\' + sversion1 + '\\' + 'test\\' + partpath
         path2 = subject_name + '\\' + sversion2 + '\\' + 'test\\' + partpath
         path3 = subject_name + '\\' + sversion1 + '\\' + 'src\\' + notest_java
-        path4 = subject_name + '\\' + sversion1 + '\\' + 'src\\' + notest_java
+        path4 = subject_name + '\\' + sversion2 + '\\' + 'src\\' + notest_java
         
         if path1 not in s:
             shutil.copy(copyfile_path + path1, rootDir)
