@@ -93,6 +93,17 @@ def write_excel(path, name_list):
     
     return name
 
+def has_string(has_str, file_name):
+    with open(file_name, 'r', encoding='UTF-8') as file_object:
+        # lines = file_object.readlines  ()
+        for line in file_object:
+            line = line.lstrip(' ')
+            if re.match(has_str, line) != None:
+            # if line.find(has_str) != -1:
+                # print(line)
+                return True
+
+    # return False
 
 def change_sheet(name, excel_path, input_dir): 
     wb = openpyxl.load_workbook(excel_path)
@@ -109,17 +120,23 @@ def change_sheet(name, excel_path, input_dir):
                     # k = len(sheet.rows)
                     k = sheet.max_row
                     
-                    root = root.split('\\')[-1]
-                    if sheet.cell(k, 1).value != root:        
+                    root1 = root.split('\\')[-1]
+                    if sheet.cell(k, 1).value != root1:        
                         k = k + 1
-                        sheet.cell(row=k, column=1, value=root)
+                        sheet.cell(row=k, column=1, value=root1)
                     if 'Test' in name1:
                         sheet.cell(row=k, column=3, value='1')
+                        if has_string('if', root + '\\' + file1):
+                            sheet.cell(row=k, column=5, value='1')
                     else:
                         sheet.cell(row=k, column=2, value='1')
+                        if has_string('if', root + '\\' + file1):
+                            sheet.cell(row=k, column=4, value='1')
                     sheet.column_dimensions["A"].width = 90
                     sheet.column_dimensions["B"].width = 50
                     sheet.column_dimensions["C"].width = 50
+                    sheet.column_dimensions["D"].width = 50
+                    sheet.column_dimensions["E"].width = 50
 
     wb.save(excel_path)
 
@@ -130,8 +147,8 @@ if __name__ == '__main__':
     print("test文件夹名：", sys.argv[2])
     main_dir = sys.argv[1]
     test_dir = sys.argv[2]
-    # main_dir = 'E:\python_work\\test\\3_logstash-logback-encoder\src\main'
-    # test_dir = 'E:\python_work\\test\\3_logstash-logback-encoder\src\\test'
+    # main_dir = 'E:\\test\\2_compile-testing\src\main'
+    # test_dir = 'E:\\test\\2_compile-testing\src\\test'
 
     java_file = file_path(main_dir)
     test_file = file_path(test_dir)
