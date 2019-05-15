@@ -1,8 +1,11 @@
-import os, sys, xlwt
-import xlrd
+import os
+import sys
+# import xlwt
+# import xlrd
 # from xlutils.copy import copy
 import openpyxl
 import re
+
 
 def file_path(file_dir):
     #读取指定目录下的所有.java文件并存入列表中
@@ -97,7 +100,7 @@ def change_sheet(name, excel_path, input_dir):
     for root, dirs, files in os.walk(input_dir):
         if files:
             for file1 in files:
-                name1 =  file1.split('.')[0]
+                name1 = file1.split('.')[0]
                 name2 = re.sub('Test', '', name1)
                 
                 if name2 in name:
@@ -122,8 +125,9 @@ def change_sheet(name, excel_path, input_dir):
 
 
 if __name__ == '__main__':
-    print ("main文件夹名：",sys.argv[1])
-    print ("test文件夹名：",sys.argv[2])
+
+    print("main文件夹名：", sys.argv[1])
+    print("test文件夹名：", sys.argv[2])
     main_dir = sys.argv[1]
     test_dir = sys.argv[2]
     # main_dir = 'E:\python_work\\test\\3_logstash-logback-encoder\src\main'
@@ -138,7 +142,7 @@ if __name__ == '__main__':
     output_path = 'E:\output\\' + project_name
     isExists = os.path.exists(output_path)
     if not isExists:
-      os.makedirs(output_path)
+        os.makedirs(output_path)
 
     path = output_path + '\\' + project_name + '.xlsx'
     name = write_excel(path, name_list)

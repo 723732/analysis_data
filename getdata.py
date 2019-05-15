@@ -1,4 +1,7 @@
-import sys, os, subprocess, re
+import sys
+import os
+import subprocess
+import re
 
 def mkdir(input_dir):
     str = input_dir
@@ -19,10 +22,10 @@ def getcommit_id(input_dir, output_path):
     # output_path = str.split('\\')[-1]
     output_file = output_path + '\\commit_id.txt'
     # cmd = 'cd ' + input_dir +'&' +'git log --pretty=oneline > '+ output_file
-    cmd = 'cd ' + input_dir +'&' +'git log --pretty=fotmat:"%h:%p:%s" > '+ output_file
+    cmd = 'cd ' + input_dir + '&' + 'git log --pretty=fotmat:"%h:%p:%s" > ' + output_file
     py_path = os.path.dirname(__file__)
 
-    p = subprocess.Popen(cmd, shell = True, cwd = py_path)
+    p = subprocess.Popen(cmd, shell=True, cwd=py_path)
     p.wait()
 
     return output_file
